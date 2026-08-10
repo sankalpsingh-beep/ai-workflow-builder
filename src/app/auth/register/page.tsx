@@ -1,29 +1,65 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useSignUpEmailPassword } from '@nhost/nextjs';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { useState } from "react";
+import { useSignUpEmailPassword } from "@nhost/nextjs";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const router = useRouter();
-  
-  const { signUpEmailPassword, isLoading, isError, error } = useSignUpEmailPassword();
+
+  const {
+    signUpEmailPassword,
+    isLoading,
+    isError,
+    error,
+    needsEmailVerification,
+  } = useSignUpEmailPassword();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await signUpEmailPassword(email, password, {
       displayName: name,
     });
-    if (result.isSuccess) {
-      router.push('/');
+
+    if (result.needsEmailVerification) {
+      // User needs to verify email first
+      setShowVerificationMessage(true);
+    } else if (result.isSuccess) {
+      // Email verification disabled, user is logged in
+      router.push("/");
     }
   };
+
+  if (showVerificationMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-white rounded-lg shadow-sm border p-8">
+            <div className="text-green-500 text-5xl mb-4">✉️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Check your email
+            </h2>
+            <p className="text-gray-600 mb-4">
+              We sent a verification link to <strong>{email}</strong>
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Click the link in the email to verify your account, then sign in.
+            </p>
+            <Link href="/auth/login">
+              <Button className="w-full">Go to Sign In</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -32,7 +68,7 @@ export default function RegisterPage() {
           <h1 className="text-3xl font-bold text-blue-600">Workflow Builder</h1>
           <p className="text-gray-600 mt-2">Create a new account</p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm border p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
@@ -43,7 +79,7 @@ export default function RegisterPage() {
               placeholder="Your name"
               required
             />
-            
+
             <Input
               label="Email"
               type="email"
@@ -52,7 +88,7 @@ export default function RegisterPage() {
               placeholder="you@example.com"
               required
             />
-            
+
             <Input
               label="Password"
               type="password"
@@ -62,18 +98,18 @@ export default function RegisterPage() {
               required
               minLength={8}
             />
-            
+
             {isError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
-                {error?.message || 'Failed to create account'}
+                {error?.message || "Failed to create account"}
               </div>
             )}
-            
+
             <Button type="submit" className="w-full" loading={isLoading}>
               Create Account
             </Button>
           </form>
-          
+
           <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">Already have an account? </span>
             <Link href="/auth/login" className="text-blue-600 hover:underline">
