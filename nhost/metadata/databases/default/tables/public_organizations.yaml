@@ -1,0 +1,76 @@
+table:
+  name: organizations
+  schema: public
+object_relationships:
+  - name: usage_stats
+    using:
+      manual_configuration:
+        column_mapping:
+          id: org_id
+        remote_table:
+          name: org_usage_stats
+          schema: public
+array_relationships:
+  - name: members
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: org_members
+          schema: public
+  - name: workflows
+    using:
+      foreign_key_constraint_on:
+        column: org_id
+        table:
+          name: workflows
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - name
+        - slug
+        - quota_limit
+        - quota_used
+        - quota_reset_at
+        - created_at
+        - updated_at
+      filter:
+        members:
+          user_id:
+            _eq: X-Hasura-User-Id
+      allow_aggregations: true
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      columns:
+        - name
+        - slug
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - name
+        - slug
+        - quota_limit
+      filter:
+        members:
+          _and:
+            - user_id:
+                _eq: X-Hasura-User-Id
+            - role:
+                _eq: owner
+      check: null
+delete_permissions:
+  - role: user
+    permission:
+      filter:
+        members:
+          _and:
+            - user_id:
+                _eq: X-Hasura-User-Id
+            - role:
+                _eq: owner

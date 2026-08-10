@@ -1,0 +1,55 @@
+# Hasura Event Triggers Configuration
+# 
+# These event triggers fire when database changes occur and call
+# our serverless functions to handle the events.
+
+# Event trigger for workflow_logs table
+# This enables the database_event trigger type for workflows
+# When a row is inserted into workflow_logs, it triggers any workflows
+# configured to watch this table.
+- name: workflow_logs_insert
+  table:
+    schema: public
+    name: workflow_logs
+  definition:
+    enable_manual: true
+    insert:
+      columns: '*'
+  retry_conf:
+    num_retries: 3
+    interval_sec: 10
+    timeout_sec: 60
+  webhook: '{{NHOST_FUNCTIONS_URL}}/db-event-trigger'
+  headers: []
+  cleanup_config:
+    schedule: '0 0 * * *'
+    batch_size: 10000
+    clear_older_than: 168
+    paused: false
+    clean_invocation_logs: true
+  request_transform: null
+
+# Event trigger for notifications
+# When a notification log is inserted (log_type = 'notification'),
+# this triggers the send-notification function to deliver the alert
+- name: send_notification
+  table:
+    schema: public
+    name: workflow_logs
+  definition:
+    enable_manual: true
+    insert:
+      columns: '*'
+  retry_conf:
+    num_retries: 3
+    interval_sec: 10
+    timeout_sec: 60
+  webhook: '{{NHOST_FUNCTIONS_URL}}/send-notification'
+  headers: []
+  cleanup_config:
+    schedule: '0 0 * * *'
+    batch_size: 10000
+    clear_older_than: 168
+    paused: false
+    clean_invocation_logs: true
+  request_transform: null
